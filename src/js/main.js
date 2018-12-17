@@ -129,7 +129,6 @@ function buildStatisticsPage(data) {
         y = d3.scaleLinear().rangeRound([ graphHeight, 0 ]);
   const yMax = Math.ceil(graph.max / 5) * 5,
         yTickValues = [...Array(yMax / 5 + 1).keys()].map(i => i * 5);
-  console.log(yMax, yTickValues);
 
   $('.stat-graph').empty();
   const graphSvg = d3
@@ -174,6 +173,7 @@ function buildStatisticsPage(data) {
 
 $editorProcess.on('click', () => {
   processTJA();
+  showPreview();
 });
 
 $input.on('input', () => {
@@ -233,5 +233,6 @@ $('.controls-page .button').on('click', evt => {
 
 if ($input.first().value) {
   processTJA();
-  updateUI();
 }
+
+updateUI();
