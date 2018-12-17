@@ -188,6 +188,10 @@ export default function (chart, courseId) {
   $canvas.width = canvasWidth;
   $canvas.height = canvasHeight;
 
+  // Add canvas element temporarily for small font rendering
+  // Ref: https://bugs.chromium.org/p/chromium/issues/detail?id=826129
+  document.body.appendChild($canvas);
+
   const ctx = $canvas.getContext('2d');
 
   //============================================================================
@@ -391,5 +395,6 @@ export default function (chart, courseId) {
     }
   }
 
+  document.body.removeChild($canvas);
   return $canvas;
 }

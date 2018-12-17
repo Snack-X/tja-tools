@@ -65,11 +65,13 @@ function showPreview() {
   try {
     $('#tja-preview').remove();
 
-    const $canvas = drawChart(tjaParsed, selectedDifficulty);
-    $canvas.id = 'tja-preview';
-    $('.page-preview').append($canvas);
+    document.fonts.load('5px "Pixel 3x5"').then(() => {
+      const $canvas = drawChart(tjaParsed, selectedDifficulty);
+      $canvas.id = 'tja-preview';
+      $('.page-preview').append($canvas);
 
-    displayErrors('No error');
+      displayErrors('No error');
+    });
   } catch (e) {
     console.error(e);
     displayErrors(e.message);
