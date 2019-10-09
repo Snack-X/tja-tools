@@ -5,32 +5,32 @@
   "description": "",
   "main": "index.html",
   "scripts": {
-    "start": "NODE_ENV=development webpack-dev-server --progres --mode development",
+    "start": "NODE_ENV=development webpack-dev-server --progress --mode development",
     "build": "NODE_ENV=production webpack --mode production",
     "build:dev": "NODE_ENV=development webpack --mode development"
   },
   "license": "MIT",
   "devDependencies": {
-    "@babel/core": "^7.2.2",
-    "@babel/plugin-transform-runtime": "^7.2.0",
-    "@babel/preset-env": "^7.2.0",
-    "@babel/runtime": "^7.2.0",
-    "babel-loader": "^8.0.4",
-    "css-loader": "^2.0.1",
-    "cssnano": "^4.1.7",
+    "@babel/core": "^7.6.3",
+    "@babel/plugin-transform-runtime": "^7.6.2",
+    "@babel/preset-env": "^7.6.3",
+    "@babel/runtime": "^7.6.3",
+    "babel-loader": "^8.0.6",
+    "css-loader": "^3.2.0",
+    "cssnano": "^4.1.10",
     "html-webpack-harddisk-plugin": "^1.0.1",
     "html-webpack-plugin": "^3.2.0",
-    "mini-css-extract-plugin": "^0.5.0",
-    "node-sass": "^4.11.0",
+    "mini-css-extract-plugin": "^0.8.0",
+    "node-sass": "^4.12.0",
     "postcss-loader": "^3.0.0",
-    "sass-loader": "^7.1.0",
-    "style-loader": "^0.23.1",
-    "webpack": "^4.27.1",
-    "webpack-cli": "^3.1.2",
-    "webpack-dev-server": "^3.1.10"
+    "sass-loader": "^8.0.0",
+    "style-loader": "^1.0.0",
+    "webpack": "^4.41.0",
+    "webpack-cli": "^3.3.9",
+    "webpack-dev-server": "^3.8.2"
   },
   "dependencies": {
-    "d3": "^5.7.0",
+    "d3": "^5.12.0",
     "umbrellajs": "^3.1.0"
   }
 }
