@@ -62,20 +62,20 @@ function processTJA() {
 function showPreview() {
   if (selectedDifficulty === '') return;
 
-  try {
-    $('#tja-preview').remove();
+  $('#tja-preview').remove();
 
-    document.fonts.load('5px "Pixel 3x5"').then(() => {
+  document.fonts.load('5px "Pixel 3x5"').then(() => {
+    try {
       const $canvas = drawChart(tjaParsed, selectedDifficulty);
       $canvas.id = 'tja-preview';
       $('.page-preview').append($canvas);
 
       displayErrors('No error');
-    });
-  } catch (e) {
-    console.error(e);
-    displayErrors(e.message);
-  }
+    } catch (e) {
+      console.error(e);
+      displayErrors(e.message);
+    }
+  });
 }
 
 function hidePreview() {
@@ -99,6 +99,26 @@ function buildStatisticsPage(data) {
 
   // Statistics
   $('.stat-total-combo').text(stats.totalCombo);
+
+  const course = tjaParsed.courses[selectedDifficulty];
+  const { scoreInit, scoreDiff } = course.headers;
+  
+  const drop1 = n => Math.floor(n / 10) * 10;
+  const multipliers = [0, 1, 2, 4, 8];
+  const noteScores = multipliers.map(m => drop1(scoreInit + scoreDiff * m));
+  const noteGogoScores = noteScores.map(s => drop1(s * 1.2));
+  const statPotential = (
+    noteScores.map((s, i) => stats.score.notes[0][i] * s).reduce((p, c) => p + c, 0) +
+    noteGogoScores.map((s, i) => stats.score.notes[1][i] * s).reduce((p, c) => p + c, 0) +
+    stats.score.balloon[0] * 300 +
+    stats.score.balloon[1] * 360 +
+    stats.score.balloonPop[0] * 5000 +
+    stats.score.balloonPop[1] * 6000 +
+    Math.floor(stats.totalCombo / 100) * 10000
+  );
+
+  if (stats.rendas.length) $('.stat-max-score').text(`${statPotential}点 + 連打`);
+  else $('.stat-max-score').text(`${statPotential}点`);
 
   $('.stat-don-small').text(stats.notes[0]);
   $('.stat-don-big').text(stats.notes[2]);

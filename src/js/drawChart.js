@@ -315,11 +315,9 @@ export default function (chart, courseId) {
   //============================================================================
   // 4. Notes
 
-  let longEnd = false;
-
   // Pre-scan balloon
 
-  let balloonIdx = 0;
+  let balloonIdx = 0, imoStart = false;
 
   for (let ridx = 0 ; ridx < rows.length ; ridx++) {
     const measures = rows[ridx].measures;
@@ -330,16 +328,32 @@ export default function (chart, courseId) {
       for (let didx = measure.data.length ; didx >= 0 ; didx--) {
         const note = measure.data.charAt(didx);
 
-        if (note === '7' || note === '9') balloonIdx += 1;
+        if (note === '7') balloonIdx += 1;
+
+        if (note === '9') {
+          if (!imoStart) {
+            imoStart = 1;
+            balloonIdx += 1;
+          }
+        }
+
+        if (note === '8' && imoStart) {
+          imoStart = false;
+        }
       }
     }
   }
 
   if (course.headers.balloon.length < balloonIdx) {
+    // cleanup
+    document.body.removeChild($canvas);
+    
     throw new Error('BALLOON count mismatch');
   }
 
   // Draw
+
+  let longEnd = false, imo = false;
 
   for (let ridx = rows.length - 1 ; ridx >= 0 ; ridx--) {
     const row = rows[ridx], measures = row.measures;
@@ -351,6 +365,19 @@ export default function (chart, courseId) {
       for (let didx = measure.data.length ; didx >= 0 ; didx--) {
         const note = measure.data.charAt(didx);
         const nBeat = measure.rowBeat + (mBeat / measure.data.length * didx);
+
+        // imo
+
+        if (note !== '0' && note !== '9' && imo) {
+          const border = imo[0];
+          const start = imo[imo.length - 1];
+
+          const balloonCount = course.headers.balloon[balloonIdx - 1];
+          drawBalloon(ctx, rows, start[0], start[1], longEnd[0], longEnd[1], balloonCount);
+          balloonIdx -= 1;
+          longEnd = false;
+          imo = false;
+        }
 
         switch (note) {
           case '1':
@@ -379,12 +406,17 @@ export default function (chart, courseId) {
             longEnd = false;
             break;
 
-          case '7': case '9':
+          case '7':
             const balloonCount = course.headers.balloon[balloonIdx - 1];
 
             drawBalloon(ctx, rows, ridx, nBeat, longEnd[0], longEnd[1], balloonCount);
             balloonIdx -= 1;
             longEnd = false;
+            break;
+
+          case '9':
+            if (!imo) imo = [];
+            imo.push([ ridx, nBeat ]);
             break;
 
           case '8':

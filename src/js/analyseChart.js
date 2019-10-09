@@ -36,7 +36,7 @@ function pulseToTime(events, objects) {
 
 function convertToTimed(course) {
   const events = [], notes = [];
-  let beat = 0, balloon = 0;
+  let beat = 0, balloon = 0, imo = false;
 
   for (let m = 0 ; m < course.measures.length ; m++) {
     const measure = course.measures[m];
@@ -50,6 +50,18 @@ function convertToTimed(course) {
         events.push({
           type: 'bpm',
           value: event.value,
+          beat: beat + eBeat,
+        });
+      }
+      else if (event.name === 'gogoStart') {
+        events.push({
+          type: 'gogoStart',
+          beat: beat + eBeat,
+        });
+      }
+      else if (event.name === 'gogoEnd') {
+        events.push({
+          type: 'gogoEnd',
           beat: beat + eBeat,
         });
       }
@@ -80,12 +92,20 @@ function convertToTimed(course) {
         case '6':
           note.type = 'rendaBig';
           break;
-        case '7': case '9':
+        case '7':
           note.type = 'balloon';
           note.count = course.headers.balloon[balloon++];
           break;
+        case '9': // imo
+          if (imo === false) {
+            note.type = 'balloon';
+            note.count = course.headers.balloon[balloon++];
+            imo = true;
+          }
+          break;
         case '8':
           note.type = 'end';
+          if (imo) imo = false;
           break;
       }
 
@@ -98,21 +118,36 @@ function convertToTimed(course) {
   const times = pulseToTime(events, notes.map(n => n.beat));
   times.forEach((t, idx) => { notes[idx].time = t; });
 
-  return { events, notes };
+  return { headers: course.headers, events, notes };
 }
 
 function getStatistics(course) {
   // total combo, don-kat ratio, average notes per second
   // renda length, balloon speed
+  // potential score, score equations, recommended score variables
 
   const notes = [ 0, 0, 0, 0 ], rendas = [], balloons = [];
   let start = 0, end = 0, combo = 0;
-  let rendaStart = false, balloonStart = false, balloonCount = 0;
+  let rendaStart = false, balloonStart = false, balloonCount = 0, balloonGogo = 0;
+  let scCurEventIdx = 0, scCurEvent = course.events[scCurEventIdx], scGogo = 0,
+      scNotes = [[0, 0, 0, 0, 0], [0, 0, 0, 0, 0]],
+      scBalloon = [0, 0], scBalloonPop = [0, 0];
+  let scPotential = 0;
 
   const typeNote = [ 'don', 'kat', 'donBig', 'katBig' ];
 
   for (let i = 0 ; i < course.notes.length ; i++) {
     const note = course.notes[i];
+    
+    if (scCurEvent && scCurEvent.beat <= note.beat) {
+      do {
+        if (scCurEvent.type === 'gogoStart') scGogo = 1;
+        else if (scCurEvent.type === 'gogoEnd') scGogo = 0;
+
+        scCurEventIdx += 1;
+        scCurEvent = course.events[scCurEventIdx];
+      } while(scCurEvent && scCurEvent.beat <= note.beat);
+    }
 
     const v1 = typeNote.indexOf(note.type);
     if (v1 !== -1) {
@@ -121,6 +156,23 @@ function getStatistics(course) {
 
       notes[v1] += 1;
       combo += 1;
+
+      const big = v1 === 2 || v1 === 3;
+      const scRange = (combo < 10 ? 0 : (combo < 30 ? 1 : (combo < 50 ? 2 : (combo < 100 ? 3 : 4))));
+      scNotes[scGogo][scRange] += big ? 2 : 1;
+
+      let noteScoreBase = (
+        course.headers.scoreInit +
+        (course.headers.scoreDiff * (combo < 10 ? 0 : (combo < 30 ? 1 : (combo < 50 ? 2 : (combo < 100 ? 4 : 8)))))
+      );
+
+      let noteScore = Math.floor(noteScoreBase / 10) * 10;
+      if (scGogo) noteScore = Math.floor(noteScore * 1.2 / 10) * 10;
+      if (big) noteScore *= 2;
+
+      scPotential += noteScore;
+      
+      // console.log(i, combo, noteScoreBase, scGogo, big, noteScore, noteScore, scPotential);
 
       continue;
     }
@@ -132,6 +184,8 @@ function getStatistics(course) {
     else if (note.type === 'balloon') {
       balloonStart = note.time;
       balloonCount = note.count;
+      balloonGogo = scGogo;
+
       continue;
     }
     else if (note.type === 'end') {
@@ -140,8 +194,15 @@ function getStatistics(course) {
         rendaStart = false;
       }
       else if (balloonStart) {
-        balloons.push([ note.time - balloonStart, balloonCount ]);
+        const balloonLength = note.time - balloonStart;
+        const balloonSpeed = balloonCount / balloonLength;
+        balloons.push([ balloonLength, balloonCount ]);
         balloonStart = false;
+
+        if (balloonSpeed <= 60) {
+          scBalloon[balloonGogo] += balloonCount - 1;
+          scBalloonPop[balloonGogo] += 1;
+        }
       }
     }
   }
@@ -152,6 +213,12 @@ function getStatistics(course) {
     length: end - start,
     rendas: rendas,
     balloons: balloons,
+    score: {
+      score: scPotential,
+      notes: scNotes,
+      balloon: scBalloon,
+      balloonPop: scBalloonPop,
+    },
   };
 }
 
