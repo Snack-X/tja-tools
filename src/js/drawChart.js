@@ -194,239 +194,241 @@ export default function (chart, courseId) {
 
   const ctx = $canvas.getContext('2d');
 
-  //============================================================================
-  // 2. Background, rows, informations
+  try {
+    //============================================================================
+    // 2. Background, rows, informations
 
-  drawRect(ctx, 0, 0, canvasWidth, canvasHeight, CHART_BG);
+    drawRect(ctx, 0, 0, canvasWidth, canvasHeight, CHART_BG);
 
-  for (let ridx = 0 ; ridx < rows.length ; ridx++) {
-    const row = rows[ridx];
-    const totalBeat = row.beats, measures = row.measures;
-    row.totalBeat = totalBeat;
+    for (let ridx = 0 ; ridx < rows.length ; ridx++) {
+      const row = rows[ridx];
+      const totalBeat = row.beats, measures = row.measures;
+      row.totalBeat = totalBeat;
 
-    const rowWidth = ROW_LEADING + (BEAT_WIDTH * totalBeat) + ROW_TRAILING;
+      const rowWidth = ROW_LEADING + (BEAT_WIDTH * totalBeat) + ROW_TRAILING;
 
-    const y = GET_ROW_Y(ridx);
+      const y = GET_ROW_Y(ridx);
 
-    drawRect(ctx, 0, y + ROW_HEIGHT_INFO,     rowWidth, ROW_HEIGHT_NOTE,     '#000');
-    drawRect(ctx, 0, y + ROW_HEIGHT_INFO + 2, rowWidth, ROW_HEIGHT_NOTE - 4, '#fff');
-    drawRect(ctx, 0, y + ROW_HEIGHT_INFO + 4, rowWidth, ROW_HEIGHT_NOTE - 8, '#999');
-  }
-
-  drawText(ctx, 8, 8, chart.headers.title, 'bold 28px sans-serif', '#000', 'top', 'left');
-
-  const difficulty = [ 'かんたん', 'ふつう', 'むずかしい', 'おに' ];
-  const levelMax = [ 5, 7, 8, 10 ];
-  const difficultyText = (
-    difficulty[course.course] + ' ' +
-    '★'.repeat(course.headers.level) +
-    '☆'.repeat(Math.max(levelMax[course.course] - course.headers.level, 0))
-  );
-
-  drawText(ctx, 8, 40, difficultyText, 'bold 20px sans-serif', '#000', 'top', 'left');
-
-  //============================================================================
-  // 3. Go-go time, measure grid, events
-
-  let gogoStart = false;
-  let measureNumber = 1;
-
-  for (let ridx = 0 ; ridx < rows.length ; ridx++) {
-    const row = rows[ridx], measures = row.measures;
-    let beat = 0;
-
-    for (let midx = 0 ; midx < measures.length ; midx++) {
-      const measure = measures[midx],
-            mBeat = measure.length[0] / measure.length[1] * 4;
-
-      measure.rowBeat = beat;
-
-      // Go-go time
-      for (let i = 0 ; i < measure.events.length ; i++) {
-        const event = measure.events[i],
-              eBeat = beat + (mBeat / (measure.data.length || 1) * event.position);
-
-        if (event.name === 'gogoStart') {
-          gogoStart = [ ridx, eBeat ];
-        }
-        else if (event.name === 'gogoEnd') {
-          drawLong(ctx, rows, gogoStart[0], gogoStart[1], ridx, eBeat, '#fbb', 'gogo');
-          gogoStart = false;
-        }
-      }
-
-      beat += mBeat;
+      drawRect(ctx, 0, y + ROW_HEIGHT_INFO,     rowWidth, ROW_HEIGHT_NOTE,     '#000');
+      drawRect(ctx, 0, y + ROW_HEIGHT_INFO + 2, rowWidth, ROW_HEIGHT_NOTE - 4, '#fff');
+      drawRect(ctx, 0, y + ROW_HEIGHT_INFO + 4, rowWidth, ROW_HEIGHT_NOTE - 8, '#999');
     }
-  }
 
-  for (let ridx = 0 ; ridx < rows.length ; ridx++) {
-    const row = rows[ridx], measures = row.measures;
-    let beat = 0;
+    drawText(ctx, 8, 8, chart.headers.title, 'bold 28px sans-serif', '#000', 'top', 'left');
 
-    const y = GET_ROW_Y(ridx);
+    const difficulty = [ 'かんたん', 'ふつう', 'むずかしい', 'おに' ];
+    const levelMax = [ 5, 7, 8, 10 ];
+    const difficultyText = (
+      difficulty[course.course] + ' ' +
+      '★'.repeat(course.headers.level) +
+      '☆'.repeat(Math.max(levelMax[course.course] - course.headers.level, 0))
+    );
 
-    for (let midx = 0 ; midx < measures.length ; midx++) {
-      const mx = GET_BEAT_X(beat);
-      const measure = measures[midx],
-            mBeat = measure.length[0] / measure.length[1] * 4;
+    drawText(ctx, 8, 40, difficultyText, 'bold 20px sans-serif', '#000', 'top', 'left');
 
-      // Sub grid
-      const ny = y + ROW_HEIGHT_INFO;
+    //============================================================================
+    // 3. Go-go time, measure grid, events
 
-      for (let i = 1 ; i < measure.length[0] * 2 ; i++) {
-        const subBeat = i / measure.length[1] * 2,
-              subx = GET_BEAT_X(beat + subBeat);
-        const style = '#fff' + (i % 2 ? '4' : '8');
+    let gogoStart = false;
+    let measureNumber = 1;
 
-        drawLine(ctx, subx, ny, subx, ny + ROW_HEIGHT_NOTE, 2, style);
-      }
+    for (let ridx = 0 ; ridx < rows.length ; ridx++) {
+      const row = rows[ridx], measures = row.measures;
+      let beat = 0;
 
-      // Events
-      for (let i = 0 ; i < measure.events.length ; i++) {
-        const event = measure.events[i],
-              eBeat = mBeat / (measure.data.length || 1) * event.position,
-              ex = GET_BEAT_X(beat + eBeat);
+      for (let midx = 0 ; midx < measures.length ; midx++) {
+        const measure = measures[midx],
+              mBeat = measure.length[0] / measure.length[1] * 4;
 
-        if (event.name === 'scroll') {
-          drawLine(ctx, ex, y, ex, y + ROW_HEIGHT, 2, '#444');
-          drawPixelText(ctx, ex + 2, y + ROW_HEIGHT_INFO - 13, 'HS ' + event.value.toString(), '#f00', 'bottom', 'left');
-        }
-        else if (event.name === 'bpm') {
-          drawLine(ctx, ex, y, ex, y + ROW_HEIGHT, 2, '#444');
-          drawPixelText(ctx, ex + 2, y + ROW_HEIGHT_INFO - 7, 'BPM ' + event.value.toString(), '#00f', 'bottom', 'left');
-        }
-      }
+        measure.rowBeat = beat;
 
-      // Measure lines, number
-      drawLine(ctx, mx, y, mx, y + ROW_HEIGHT, 2, '#fff');
-      drawPixelText(ctx, mx + 2, y + ROW_HEIGHT_INFO - 1, measureNumber.toString(), '#000', 'bottom', 'left');
-      measureNumber += 1;
+        // Go-go time
+        for (let i = 0 ; i < measure.events.length ; i++) {
+          const event = measure.events[i],
+                eBeat = beat + (mBeat / (measure.data.length || 1) * event.position);
 
-      beat += mBeat;
-
-      // Draw last measure line
-      if (midx + 1 === measures.length) {
-        const mx2 = GET_BEAT_X(beat);
-        drawLine(ctx, mx2, y, mx2, y + ROW_HEIGHT, 2, '#fff');
-      }
-    }
-  }
-
-  //============================================================================
-  // 4. Notes
-
-  // Pre-scan balloon
-
-  let balloonIdx = 0, imoStart = false;
-
-  for (let ridx = 0 ; ridx < rows.length ; ridx++) {
-    const measures = rows[ridx].measures;
-
-    for (let midx = 0 ; midx < measures.length ; midx++) {
-      const measure = measures[midx];
-
-      for (let didx = measure.data.length ; didx >= 0 ; didx--) {
-        const note = measure.data.charAt(didx);
-
-        if (note === '7') balloonIdx += 1;
-
-        if (note === '9') {
-          if (!imoStart) {
-            imoStart = 1;
-            balloonIdx += 1;
+          if (event.name === 'gogoStart') {
+            gogoStart = [ ridx, eBeat ];
+          }
+          else if (event.name === 'gogoEnd') {
+            drawLong(ctx, rows, gogoStart[0], gogoStart[1], ridx, eBeat, '#fbb', 'gogo');
+            gogoStart = false;
           }
         }
 
-        if (note === '8' && imoStart) {
-          imoStart = false;
+        beat += mBeat;
+      }
+    }
+
+    for (let ridx = 0 ; ridx < rows.length ; ridx++) {
+      const row = rows[ridx], measures = row.measures;
+      let beat = 0;
+
+      const y = GET_ROW_Y(ridx);
+
+      for (let midx = 0 ; midx < measures.length ; midx++) {
+        const mx = GET_BEAT_X(beat);
+        const measure = measures[midx],
+              mBeat = measure.length[0] / measure.length[1] * 4;
+
+        // Sub grid
+        const ny = y + ROW_HEIGHT_INFO;
+
+        for (let i = 1 ; i < measure.length[0] * 2 ; i++) {
+          const subBeat = i / measure.length[1] * 2,
+                subx = GET_BEAT_X(beat + subBeat);
+          const style = '#fff' + (i % 2 ? '4' : '8');
+
+          drawLine(ctx, subx, ny, subx, ny + ROW_HEIGHT_NOTE, 2, style);
+        }
+
+        // Events
+        for (let i = 0 ; i < measure.events.length ; i++) {
+          const event = measure.events[i],
+                eBeat = mBeat / (measure.data.length || 1) * event.position,
+                ex = GET_BEAT_X(beat + eBeat);
+
+          if (event.name === 'scroll') {
+            drawLine(ctx, ex, y, ex, y + ROW_HEIGHT, 2, '#444');
+            drawPixelText(ctx, ex + 2, y + ROW_HEIGHT_INFO - 13, 'HS ' + event.value.toString(), '#f00', 'bottom', 'left');
+          }
+          else if (event.name === 'bpm') {
+            drawLine(ctx, ex, y, ex, y + ROW_HEIGHT, 2, '#444');
+            drawPixelText(ctx, ex + 2, y + ROW_HEIGHT_INFO - 7, 'BPM ' + event.value.toString(), '#00f', 'bottom', 'left');
+          }
+        }
+
+        // Measure lines, number
+        drawLine(ctx, mx, y, mx, y + ROW_HEIGHT, 2, '#fff');
+        drawPixelText(ctx, mx + 2, y + ROW_HEIGHT_INFO - 1, measureNumber.toString(), '#000', 'bottom', 'left');
+        measureNumber += 1;
+
+        beat += mBeat;
+
+        // Draw last measure line
+        if (midx + 1 === measures.length) {
+          const mx2 = GET_BEAT_X(beat);
+          drawLine(ctx, mx2, y, mx2, y + ROW_HEIGHT, 2, '#fff');
         }
       }
     }
-  }
 
-  if (course.headers.balloon.length < balloonIdx) {
-    // cleanup
-    document.body.removeChild($canvas);
-    
-    throw new Error('BALLOON count mismatch');
-  }
+    //============================================================================
+    // 4. Notes
 
-  // Draw
+    // Pre-scan balloon
 
-  let longEnd = false, imo = false;
+    let balloonIdx = 0, imoStart = false;
 
-  for (let ridx = rows.length - 1 ; ridx >= 0 ; ridx--) {
-    const row = rows[ridx], measures = row.measures;
-    let beat = 0;
+    for (let ridx = 0 ; ridx < rows.length ; ridx++) {
+      const measures = rows[ridx].measures;
 
-    for (let midx = measures.length - 1 ; midx >= 0 ; midx--) {
-      const measure = measures[midx], mBeat = measure.length[0] / measure.length[1] * 4;
+      for (let midx = 0 ; midx < measures.length ; midx++) {
+        const measure = measures[midx];
 
-      for (let didx = measure.data.length ; didx >= 0 ; didx--) {
-        const note = measure.data.charAt(didx);
-        const nBeat = measure.rowBeat + (mBeat / measure.data.length * didx);
+        for (let didx = measure.data.length ; didx >= 0 ; didx--) {
+          const note = measure.data.charAt(didx);
 
-        // imo
+          if (note === '7') balloonIdx += 1;
 
-        if (note !== '0' && note !== '9' && imo) {
-          const border = imo[0];
-          const start = imo[imo.length - 1];
+          if (note === '9') {
+            if (!imoStart) {
+              imoStart = 1;
+              balloonIdx += 1;
+            }
+          }
 
-          const balloonCount = course.headers.balloon[balloonIdx - 1];
-          drawBalloon(ctx, rows, start[0], start[1], longEnd[0], longEnd[1], balloonCount);
-          balloonIdx -= 1;
-          longEnd = false;
-          imo = false;
+          if (note === '8' && imoStart) {
+            imoStart = false;
+          }
         }
+      }
+    }
 
-        switch (note) {
-          case '1':
-            drawSmallNote(ctx, ridx, nBeat, '#f33');
-            break;
+    if (course.headers.balloon.length < balloonIdx) {    
+      throw new Error('BALLOON count mismatch');
+    }
 
-          case '2':
-            drawSmallNote(ctx, ridx, nBeat, '#5cf');
-            break;
+    // Draw
 
-          case '3':
-            drawBigNote(ctx, ridx, nBeat, '#f33');
-            break;
+    let longEnd = false, imo = false;
 
-          case '4':
-            drawBigNote(ctx, ridx, nBeat, '#5cf');
-            break;
+    for (let ridx = rows.length - 1 ; ridx >= 0 ; ridx--) {
+      const row = rows[ridx], measures = row.measures;
+      let beat = 0;
 
-          case '5':
-            drawRendaSmall(ctx, rows, ridx, nBeat, longEnd[0], longEnd[1]);
-            longEnd = false;
-            break;
+      for (let midx = measures.length - 1 ; midx >= 0 ; midx--) {
+        const measure = measures[midx], mBeat = measure.length[0] / measure.length[1] * 4;
 
-          case '6':
-            drawRendaBig(ctx, rows, ridx, nBeat, longEnd[0], longEnd[1]);
-            longEnd = false;
-            break;
+        for (let didx = measure.data.length ; didx >= 0 ; didx--) {
+          const note = measure.data.charAt(didx);
+          const nBeat = measure.rowBeat + (mBeat / measure.data.length * didx);
 
-          case '7':
+          // imo
+
+          if (note !== '0' && note !== '9' && imo) {
+            const border = imo[0];
+            const start = imo[imo.length - 1];
+
             const balloonCount = course.headers.balloon[balloonIdx - 1];
-
-            drawBalloon(ctx, rows, ridx, nBeat, longEnd[0], longEnd[1], balloonCount);
+            drawBalloon(ctx, rows, start[0], start[1], longEnd[0], longEnd[1], balloonCount);
             balloonIdx -= 1;
             longEnd = false;
-            break;
+            imo = false;
+          }
 
-          case '9':
-            if (!imo) imo = [];
-            imo.push([ ridx, nBeat ]);
-            break;
+          switch (note) {
+            case '1':
+              drawSmallNote(ctx, ridx, nBeat, '#f33');
+              break;
 
-          case '8':
-            longEnd = [ ridx, nBeat ];
-            break;
+            case '2':
+              drawSmallNote(ctx, ridx, nBeat, '#5cf');
+              break;
+
+            case '3':
+              drawBigNote(ctx, ridx, nBeat, '#f33');
+              break;
+
+            case '4':
+              drawBigNote(ctx, ridx, nBeat, '#5cf');
+              break;
+
+            case '5':
+              drawRendaSmall(ctx, rows, ridx, nBeat, longEnd[0], longEnd[1]);
+              longEnd = false;
+              break;
+
+            case '6':
+              drawRendaBig(ctx, rows, ridx, nBeat, longEnd[0], longEnd[1]);
+              longEnd = false;
+              break;
+
+            case '7':
+              const balloonCount = course.headers.balloon[balloonIdx - 1];
+
+              drawBalloon(ctx, rows, ridx, nBeat, longEnd[0], longEnd[1], balloonCount);
+              balloonIdx -= 1;
+              longEnd = false;
+              break;
+
+            case '9':
+              if (!imo) imo = [];
+              imo.push([ ridx, nBeat ]);
+              break;
+
+            case '8':
+              longEnd = [ ridx, nBeat ];
+              break;
+          }
         }
       }
     }
-  }
 
-  document.body.removeChild($canvas);
-  return $canvas;
+    document.body.removeChild($canvas);
+    return $canvas;
+  } catch (e) {
+    document.body.removeChild($canvas);
+    throw e;
+  }
 }
