@@ -20,6 +20,7 @@ Per-course Headers
   * Normal / 1
   * Hard / 2
   * Oni / 3
+  * Edit / 4
 - [v] LEVEL:
 - [v] BALLOON:
 - [v] SCOREINIT:

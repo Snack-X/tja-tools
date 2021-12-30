@@ -216,8 +216,8 @@ export default function (chart, courseId) {
 
     drawText(ctx, 8, 8, chart.headers.title, 'bold 28px sans-serif', '#000', 'top', 'left');
 
-    const difficulty = [ 'かんたん', 'ふつう', 'むずかしい', 'おに' ];
-    const levelMax = [ 5, 7, 8, 10 ];
+    const difficulty = [ 'かんたん', 'ふつう', 'むずかしい', 'おに' , 'おに（裏）' ];
+    const levelMax = [ 5, 7, 8, 10, 10 ];
     const difficultyText = (
       difficulty[course.course] + ' ' +
       '★'.repeat(course.headers.level) +
